@@ -11,7 +11,7 @@
 
 using namespace std;
 
-// Використовуємо відносний шлях, оскільки файл arial.ttf лежить у папці з проектом
+// Relative path to the font file
 const string FONT_PATH2 = "";
 
 class GameEnhancer {
@@ -31,7 +31,7 @@ private:
 
     std::function<void()> restartCallback;
 
-    // --- НОВІ ЗМІННІ ДЛЯ ПРОКРУТКИ ---
+    // Scrolling logic variables
     float scrollOffset = 0.0f;
     float LINE_HEIGHT = 24.0f;
     float VIEW_HEIGHT = 500.0f;
@@ -41,7 +41,7 @@ public:
     bool timeAlertShown = false;
 
     GameEnhancer() {
-        // Завантажуємо шрифт (має лежати поруч з .exe або в робочій директорії)
+        // Load font (must be in the project directory or executable folder)
         if (!font.loadFromFile("arial.ttf")) {
             cerr << "Failed to load font arial.ttf\n";
         }
@@ -56,12 +56,12 @@ public:
 
         whiteTimerText.setFillColor(sf::Color::White);
         blackTimerText.setFillColor(sf::Color::White);
-        historyText.setFillColor(sf::Color(200, 200, 200)); // Світло-сірий для історії
+        historyText.setFillColor(sf::Color(200, 200, 200)); // Light grey for history
 
         whiteTimerText.setPosition(820, 20);
         blackTimerText.setPosition(820, 60);
 
-        // Початкова позиція тексту історії (буде змінюватися через View)
+        // Initial history text position (managed by View later)
         historyText.setPosition(820, 0);
 
         whiteStartTime = chrono::steady_clock::now();
@@ -71,13 +71,13 @@ public:
         restartCallback = callback;
     }
 
-    // Метод для обробки коліщатка миші
+    // Method to handle mouse wheel scrolling
     void handleScroll(float delta) {
         float totalHeight = (moveHistory.size() + 2) * LINE_HEIGHT;
 
-        // Прокручуємо тільки якщо ходів більше, ніж влазить в екран
+        // Only scroll if history content exceeds view height
         if (totalHeight > VIEW_HEIGHT) {
-            scrollOffset -= delta * 20.0f; // 20.0f - швидкість
+            scrollOffset -= delta * 20.0f; // 20.0f - scroll speed
 
             if (scrollOffset < 0) scrollOffset = 0;
             if (scrollOffset > totalHeight - VIEW_HEIGHT)
@@ -86,6 +86,7 @@ public:
     }
 
     void recordMove(int fromX, int fromY, int toX, int toY) {
+        // Convert coordinates to algebraic notation
         string move = string(1, 'a' + fromX) + to_string(8 - fromY) + " -> " +
                       string(1, 'a' + toX) + to_string(8 - toY);
         moveHistory.push_back(move);
@@ -100,7 +101,7 @@ public:
         }
         isWhiteTurn = !isWhiteTurn;
 
-        // Автоматично прокручуємо вниз при новому ході
+        // Auto-scroll to the bottom when a new move is recorded
         float totalHeight = (moveHistory.size() + 2) * LINE_HEIGHT;
         if (totalHeight > VIEW_HEIGHT) {
             scrollOffset = totalHeight - VIEW_HEIGHT;
@@ -108,74 +109,75 @@ public:
     }
 
     void drawExtras(sf::RenderWindow& window) {
-    // 1. Спочатку малюємо таймери у звичайному режимі (Default View)
-    float wTime = whiteElapsed;
-    float bTime = blackElapsed;
-    auto now = chrono::steady_clock::now();
-    if (isWhiteTurn) wTime += chrono::duration<float>(now - whiteStartTime).count();
-    else bTime += chrono::duration<float>(now - blackStartTime).count();
+        // Calculate current timer values
+        float wTime = whiteElapsed;
+        float bTime = blackElapsed;
+        auto now = chrono::steady_clock::now();
+        if (isWhiteTurn) wTime += chrono::duration<float>(now - whiteStartTime).count();
+        else bTime += chrono::duration<float>(now - blackStartTime).count();
 
-    if ((wTime > 180 || bTime > 180) && !timeAlertShown) {
-        gameOverDueToTime = true;
-        showTimeOverDialog((wTime > 180) ? "White" : "Black");
-        timeAlertShown = true;
+        // Check for timeout (180s = 3 minutes)
+        if ((wTime > 180 || bTime > 180) && !timeAlertShown) {
+            gameOverDueToTime = true;
+            showTimeOverDialog((wTime > 180) ? "White" : "Black");
+            timeAlertShown = true;
+        }
+
+        stringstream wss, bss;
+        wss << "White Time: " << static_cast<int>(wTime) << "s";
+        bss << "Black Time: " << static_cast<int>(bTime) << "s";
+        whiteTimerText.setString(wss.str());
+        blackTimerText.setString(bss.str());
+
+        window.draw(whiteTimerText);
+        window.draw(blackTimerText);
+
+        // --- SCROLLING LOGIC ---
+
+        float winW = (float)window.getSize().x;
+        float winH = (float)window.getSize().y;
+
+
+
+        sf::View historyView(sf::FloatRect(0, scrollOffset, 350, VIEW_HEIGHT));
+
+        //  this rectangle appears on the physical screen.
+
+        historyView.setViewport(sf::FloatRect(820.f / winW, 120.f / winH, 350.f / winW, VIEW_HEIGHT / winH));
+        window.setView(historyView);
+
+        stringstream hist;
+        hist << "Moves History:\n------------------\n";
+        for (size_t i = 0; i < moveHistory.size(); ++i) {
+            hist << i + 1 << ". " << moveHistory[i] << "\n";
+        }
+
+        historyText.setString(hist.str());
+        // Position 0,0 relative to the current View
+        historyText.setPosition(0, 0);
+        window.draw(historyText);
+
+        //  RESET to default view to draw the scrollbar fixed on screen
+        window.setView(window.getDefaultView());
+
+
+        float totalHeight = (moveHistory.size() + 2) * LINE_HEIGHT;
+        if (totalHeight > VIEW_HEIGHT) {
+            // Scrollbar track (background)
+            sf::RectangleShape track(sf::Vector2f(4, VIEW_HEIGHT));
+            track.setPosition(1185, 120);
+            track.setFillColor(sf::Color(60, 60, 60));
+            window.draw(track);
+
+            // Scrollbar thumb (moving part)
+            float barHeight = (VIEW_HEIGHT / totalHeight) * VIEW_HEIGHT;
+            float barPos = (scrollOffset / totalHeight) * VIEW_HEIGHT;
+            sf::RectangleShape scrollbar(sf::Vector2f(6, barHeight));
+            scrollbar.setPosition(1184, 120 + barPos);
+            scrollbar.setFillColor(sf::Color(180, 180, 180));
+            window.draw(scrollbar);
+        }
     }
-
-    stringstream wss, bss;
-    wss << "White Time: " << static_cast<int>(wTime) << "s";
-    bss << "Black Time: " << static_cast<int>(bTime) << "s";
-    whiteTimerText.setString(wss.str());
-    blackTimerText.setString(bss.str());
-
-    window.draw(whiteTimerText);
-    window.draw(blackTimerText);
-
-    // --- ЛОГІКА ПРОКРУТКИ ТА ОБРІЗКИ ---
-
-    float winW = (float)window.getSize().x;
-    float winH = (float)window.getSize().y;
-
-    // 2. Створюємо View для списку ходів.
-    // Координати (0, scrollOffset) означають, що всередині цієї "камери" ми починаємо малювати з нуля.
-    sf::View historyView(sf::FloatRect(0, scrollOffset, 350, VIEW_HEIGHT));
-
-    // Встановлюємо в'юпорт: де цей прямокутник буде на реальному екрані.
-    // Починаємо з 820 пікселя по ширині (край дошки) та 120 по висоті.
-    historyView.setViewport(sf::FloatRect(820.f / winW, 120.f / winH, 350.f / winW, VIEW_HEIGHT / winH));
-    window.setView(historyView);
-
-    stringstream hist;
-    hist << "Moves History:\n------------------\n";
-    for (size_t i = 0; i < moveHistory.size(); ++i) {
-        hist << i + 1 << ". " << moveHistory[i] << "\n";
-    }
-
-    historyText.setString(hist.str());
-    // ВАЖЛИВО: Позиція 0,0 відносно нового View
-    historyText.setPosition(0, 0);
-    window.draw(historyText);
-
-    // 3. ПОВЕРТАЄМО стандартний View для малювання повзунка
-    window.setView(window.getDefaultView());
-
-    // 4. Малюємо повзунок (scrollbar) у звичайних координатах вікна
-    float totalHeight = (moveHistory.size() + 2) * LINE_HEIGHT;
-    if (totalHeight > VIEW_HEIGHT) {
-        // Доріжка
-        sf::RectangleShape track(sf::Vector2f(4, VIEW_HEIGHT));
-        track.setPosition(1185, 120);
-        track.setFillColor(sf::Color(60, 60, 60));
-        window.draw(track);
-
-        // Повзунок (світлий прямокутник)
-        float barHeight = (VIEW_HEIGHT / totalHeight) * VIEW_HEIGHT;
-        float barPos = (scrollOffset / totalHeight) * VIEW_HEIGHT;
-        sf::RectangleShape scrollbar(sf::Vector2f(6, barHeight));
-        scrollbar.setPosition(1184, 120 + barPos);
-        scrollbar.setFillColor(sf::Color(180, 180, 180));
-        window.draw(scrollbar);
-    }
-}
 
     void showTimeOverDialog(const string& loserColor) {
         sf::RenderWindow timeoutWindow(sf::VideoMode(320, 150), "Time's up!");
