@@ -3,7 +3,7 @@ project(chess)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# Цей блок автоматично завантажить SFML з інтернету при першій компіляції
+
 include(FetchContent)
 FetchContent_Declare(
         SFML
@@ -14,5 +14,13 @@ FetchContent_MakeAvailable(SFML)
 
 add_executable(chess main.cpp ChessBoard.cpp )
 
-# Підключаємо модулі SFML до вашої програми
+
 target_link_libraries(chess sfml-graphics sfml-window sfml-system)
+if (WIN32)
+    add_custom_command(TARGET chess POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:chess>
+            $<TARGET_FILE_DIR:chess>
+            COMMAND_EXPAND_LISTS
+    )
+endif()
