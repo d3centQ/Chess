@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/project/chess/cmake-build-debug/_deps/sfml-subbuild/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
