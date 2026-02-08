@@ -132,7 +132,7 @@ public:
         window.draw(whiteTimerText);
         window.draw(blackTimerText);
 
-        // --- SCROLLING LOGIC ---
+
 
         float winW = (float)window.getSize().x;
         float winH = (float)window.getSize().y;
@@ -141,13 +141,12 @@ public:
 
         sf::View historyView(sf::FloatRect(0, scrollOffset, 350, VIEW_HEIGHT));
 
-        //  this rectangle appears on the physical screen.
 
         historyView.setViewport(sf::FloatRect(820.f / winW, 120.f / winH, 350.f / winW, VIEW_HEIGHT / winH));
         window.setView(historyView);
 
         stringstream hist;
-        hist << "Moves History:\n------------------\n";
+        hist << "Moves History:\n----------------\n";
         for (size_t i = 0; i < moveHistory.size(); ++i) {
             hist << i + 1 << ". " << moveHistory[i] << "\n";
         }
