@@ -12,7 +12,8 @@
 using namespace std;
 
 // Relative path to the font file
-const string FONT_PATH2 = "";
+const string FIGURE_PATH2 = "figures/";
+const string FONT_PATH = "";
 
 class GameEnhancer {
 private:

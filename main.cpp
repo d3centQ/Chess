@@ -5,7 +5,7 @@ using namespace sf;
 
 int main() {
 
-    // 1200x800 - вистачить для дошки (800x800) та панелі (400 пікселів справа)
+
     RenderWindow window(VideoMode(1200, 800), "Chess Game", Style::Titlebar | Style::Close);
 
     ChessBoard chessBoard;

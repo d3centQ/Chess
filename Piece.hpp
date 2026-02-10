@@ -7,7 +7,7 @@
 #include <string>
 using namespace std;
 // Base class for all chess pieces.
-const string FIGURE_PATH = R"(C:\project\chess\figures\)";
+const string FIGURE_PATH = "figures/";
 class Piece {
 public:
     enum class Color { White, Black };
@@ -15,12 +15,8 @@ public:
     Piece(Color color) : color(color) {}
     virtual ~Piece() {}
 
-    // Returns the valid moves for this piece on the board.
-    // The board is an 8x8 vector of Piece pointers.
-    // (x,y) is the current board position.
     virtual vector<sf::Vector2i> getValidMoves(const vector<vector<Piece*>> &board, int x, int y) const = 0;
 
-    // Draw the piece onto the given SFML window.
     // Each board square is assumed to be 100x100 pixels.
     virtual void draw(sf::RenderWindow &window, int x, int y) const = 0;
 

@@ -37,13 +37,15 @@ public:
     void handleCheckmate(Piece::Color winningColor);
 
 private:
-    std::vector<std::vector<Piece*>> board; // 8x8 board of pointers
+    std::vector<std::vector<Piece*>> board;// 8x8 board of pointers
+    Piece::Color currentPlayer;
     bool pieceSelected;
     sf::Vector2i selectedPiece;
     Piece::Color currentTurn;
     std::vector<sf::CircleShape> moveHints;
     std::vector<sf::CircleShape> captureHints;
     GameEnhancer enhancer;
+
 };
 
 #endif // CHESSBOARD_HPP

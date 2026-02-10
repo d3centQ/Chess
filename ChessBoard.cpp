@@ -6,14 +6,13 @@
 #include "GameEnhancer.hpp"
 
 using namespace std;
-const string FIGURE_PATH2 = R"(C:\project\chess\figures\)";
-const string FONT_PATH = R"(C:\project\chess\)";
-ChessBoard::ChessBoard() {
+
+
+ChessBoard::ChessBoard() : currentPlayer(Piece::Color::White), pieceSelected(false) {
     initBoard();
-
-
-    pieceSelected = false;
-
+    enhancer.setRestartCallback([this]() {
+        this->fullRestart();
+    });
 }
 
 ChessBoard::~ChessBoard() {
@@ -76,16 +75,16 @@ void ChessBoard::draw(sf::RenderWindow& window) {
 }
 
 void ChessBoard::handleEvent(const sf::Event& event) {
-    static Piece::Color currentPlayer = Piece::Color::White;
-
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         int x = event.mouseButton.x / 100;
         int y = event.mouseButton.y / 100;
+
         if (pieceSelected) {
             auto validMoves = getValidMoves(selectedPiece.x, selectedPiece.y);
             validMoves.erase(remove_if(validMoves.begin(), validMoves.end(), [this](sf::Vector2i move) {
                 return !willMovePreventCheck(selectedPiece.x, selectedPiece.y, move.x, move.y, board[selectedPiece.y][selectedPiece.x]->getColor());
             }), validMoves.end());
+
             sf::Vector2i target(x, y);
             if (find(validMoves.begin(), validMoves.end(), target) != validMoves.end()) {
                 if (dynamic_cast<King*>(board[selectedPiece.y][selectedPiece.x])) {
@@ -118,6 +117,7 @@ void ChessBoard::handleEvent(const sf::Event& event) {
                     swap(board[selectedPiece.y][selectedPiece.x], board[y][x]);
                     promotePawnIfNecessary(y, x);
                 }
+
                 enhancer.recordMove(selectedPiece.x, selectedPiece.y, x, y);
 
                 pieceSelected = false;
@@ -126,16 +126,17 @@ void ChessBoard::handleEvent(const sf::Event& event) {
 
                 if (isCheckmate(Piece::Color::White)) {
                     handleCheckmate(Piece::Color::Black);
+                    return;
                 }
                 else if (isCheckmate(Piece::Color::Black)) {
                     handleCheckmate(Piece::Color::White);
+                    return;
                 }
+
 
                 currentPlayer = (currentPlayer == Piece::Color::White) ? Piece::Color::Black : Piece::Color::White;
             }
             else {
-
-
                 pieceSelected = false;
                 moveHints.clear();
                 captureHints.clear();
@@ -388,11 +389,11 @@ void ChessBoard::handleCheckmate(Piece::Color winningColor) {
                 alertWindow.close();
             }
             if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
-                int mouseX = event.mouseButton.x;
-                int mouseY = event.mouseButton.y;
+                float mouseX = static_cast<float>(event.mouseButton.x);
+                float mouseY = static_cast<float>(event.mouseButton.y);
                 if (button.getGlobalBounds().contains(mouseX, mouseY)) {
                     alertWindow.close();
-                    initBoard();
+                    fullRestart();
                 }
             }
         }
@@ -402,20 +403,15 @@ void ChessBoard::handleCheckmate(Piece::Color winningColor) {
         alertWindow.draw(buttonText);
         alertWindow.display();
     }
-
-
 }
+
 void ChessBoard::fullRestart() {
-    enhancer.gameOverDueToTime = false;
-    enhancer.timeAlertShown = false;
-
-    enhancer = GameEnhancer();
-    enhancer.setRestartCallback([this]() {
-        fullRestart();
-    });
-
+    enhancer.reset();
     initBoard();
-    pieceSelected = false;
-    moveHints.clear();
-    captureHints.clear();
+
+    this->currentPlayer = Piece::Color::White;
+
+    this->pieceSelected = false;
+    this->moveHints.clear();
+    this->captureHints.clear();
 }

@@ -23,4 +23,20 @@ if (WIN32)
             $<TARGET_FILE_DIR:chess>
             COMMAND_EXPAND_LISTS
     )
+
+    set(ASSETS_DIR "${CMAKE_CURRENT_SOURCE_DIR}/figures")
+    set(FONT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/arial.ttf")
+
+
+    add_custom_command(TARGET chess POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${ASSETS_DIR}"
+            "$<TARGET_FILE_DIR:chess>/figures"
+
+            COMMAND ${CMAKE_COMMAND} -E copy
+            "${FONT_FILE}"
+            "$<TARGET_FILE_DIR:chess>/arial.ttf"
+
+            COMMENT "Copying assets to the output directory..."
+    )
 endif()
